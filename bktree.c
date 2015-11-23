@@ -7,6 +7,9 @@
 
 struct bknode root;
 
+#define ALLOW_DISTANCE	(1)
+
+
 #define MIN3(a, b, c) ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
 
 int levenshtein(char *s1, char *s2) {
@@ -51,12 +54,12 @@ int add_node(struct bknode *node,struct bknode *parent)
 			return 0;
 		}
 	}
-	//printf("%s:%d added %s at parent %s\n",__func__,__LINE__,node->key_string,parent->key_string);
 	/*add node to the parent*/
 	LIST_INSERT_HEAD(&parent->child,node,next);
 	node->node_level = parent->node_level + 1;
 	parent->no_of_child++;
 	node->lev_parent = lev_dis;
+	//printf("%s:%d added %s(%d) at parent %s\n",__func__,__LINE__,node->key_string,node->lev_parent,parent->key_string);
 	return 0;
 }
 
@@ -88,7 +91,7 @@ int bk_add(char *key)
 
 	BK_NODE_INIT(node);
 	strcpy(node->key_string,key);
-	printf("%s:%d adding node %s\n",__func__,__LINE__,node->key_string);
+//	printf("%s:%d adding node %s\n",__func__,__LINE__,node->key_string);
 
 	ret = add_node(node,&root);
 
@@ -162,3 +165,83 @@ int bk_print_tree(void)
 
 	return 0;	
 }
+
+int list_insert_sorted(struct bknode *list,struct bknode *node)
+{
+	struct bknode *temp;
+	int lev_parent;
+	lev_parent = node->lev_parent;
+
+	LIST_FOREACH(temp,&list->child,next)
+	{
+		if(temp->lev_parent > lev_parent)
+		{
+		}
+	}	
+
+	return 0;
+}
+
+int search_count;
+int skip_count;
+
+
+int bk_search(char *search_str,struct bknode *parent,int allow_lev,struct bknode *list)
+{
+	struct bknode *temp;
+	int lev_parent,ret=-1,lev_min,lev_max;
+
+//	printf("Started Search for key string '%s'\n",search_str);
+
+	search_count++;
+	lev_parent = levenshtein(search_str,parent->key_string);
+	if(lev_parent <= allow_lev){
+		printf("********* %s(%d) ********\n",parent->key_string,lev_parent);
+		temp = malloc(sizeof(*temp));
+		strcpy(temp->key_string,parent->key_string);
+		temp->lev_parent = lev_parent;
+		list->no_of_child++;
+		LIST_INSERT_HEAD(&list->child,temp,next);
+		return 0;
+	}
+
+	lev_max = lev_parent + allow_lev;
+	lev_min = lev_parent - allow_lev;
+	(lev_min < 0)? (lev_min = 0) : (1);
+//	printf("search in parent %s(%d) for child with lev [%d,%d]\n",parent->key_string,lev_parent,lev_min,lev_max);
+
+	LIST_FOREACH(temp,&parent->child,next)
+	{
+//		printf("check the child '%s(%d)' [%d,%d]\n",temp->key_string,temp->lev_parent,lev_min,lev_max);
+		if(temp->lev_parent <= lev_max && temp->lev_parent >= lev_min)
+		{
+//			printf("child within allow lev %s(%d)\n",temp->key_string,temp->lev_parent);
+			bk_search(search_str,temp,allow_lev,list);
+		}
+		else
+			skip_count++;
+	}
+//	printf("return of %s ret %d\n",parent->key_string,ret);
+	return ret;
+}
+
+int bk_search_tree(char *search_str,struct bknode *list)
+{
+
+	BK_NODE_INIT(list);
+	
+	search_count = 0;
+	skip_count = 0;
+
+	bk_search(search_str,&root,ALLOW_DISTANCE,list);
+	
+	printf("words checked::: %d\n",search_count);
+	printf("words skipped::: %d\n",skip_count);
+	return 0;
+}
+
+
+
+
+
+
