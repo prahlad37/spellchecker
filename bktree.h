@@ -12,15 +12,15 @@ struct bknode {
 	int no_of_child;
 	int lev_parent;
 	char key_string[KEY_STRING_SIZE_MAX];
-	LIST_ENTRY(bknode)	next;
-	LIST_HEAD(child,bknode) child;
+	TAILQ_ENTRY(bknode)	next;
+	TAILQ_HEAD(child,bknode) child;
 };
 
 #define BK_NODE_INIT(node) do {						\
 	(node)->node_level = -1;					\
 	(node)->no_of_child = 0;					\
 	(node)->lev_parent = 0;						\
-	LIST_INIT(&(node)->child);					\
+	TAILQ_INIT(&(node)->child);					\
 } while(0)
 
 #define PR_H_BR		"─┬─"
@@ -33,5 +33,5 @@ struct bknode {
 int bk_init(void);
 int bk_add(char *key);
 int bk_print_tree(void);
-
+int bk_search_tree(char *search_str,struct bknode *list);
 #endif
